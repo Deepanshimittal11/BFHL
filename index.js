@@ -7,6 +7,8 @@ require('dotenv').config();
 const express = require('express');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
+console.log("GEMINI KEY PRESENT:", !!process.env.GEMINI_API_KEY);
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -15,7 +17,7 @@ app.use(express.json());
 
 /* ---------- CONFIG ---------- */
 const OFFICIAL_EMAIL =
-  process.env.OFFICIAL_EMAIL || "deepanshi.mittal@chitkara.edu.in";
+  process.env.OFFICIAL_EMAIL || "deepanshi0066.be23@chitkara.edu.in";
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 /* ---------- LIMITS ---------- */
@@ -84,6 +86,41 @@ function getProvidedKey(body) {
 }
 
 /* ---------- AI (GEMINI) ---------- */
+// async function getSingleWordAIAnswer(question) {
+//   if (!GEMINI_API_KEY) {
+//     throw new Error("GEMINI_API_KEY not configured");
+//   }
+
+//   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+//   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+//   const prompt = `
+// Answer with EXACTLY ONE WORD.
+// No punctuation.
+// No explanation.
+
+// Question: ${question}
+// `;
+
+//   // const result = await model.generateContent(prompt);
+//   const result = await model.generateContent({
+//   contents: [
+//     {
+//       role: "user",
+//       parts: [{ text: prompt }]
+//     }
+//   ]
+// });
+
+//   const text = result.response?.text?.()?.trim() || "";
+
+//   const singleWord = text
+//     .split(/\s+/)[0]
+//     .replace(/[^a-zA-Z0-9]/g, "");
+
+//   return singleWord || "Unknown";
+// }
+
 async function getSingleWordAIAnswer(question) {
   if (!GEMINI_API_KEY) {
     throw new Error("GEMINI_API_KEY not configured");
@@ -100,8 +137,16 @@ No explanation.
 Question: ${question}
 `;
 
-  const result = await model.generateContent(prompt);
-  const text = result.response?.text?.()?.trim() || "";
+  const result = await model.generateContent({
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: prompt }]
+      }
+    ]
+  });
+
+  const text = result.response.text().trim();
 
   const singleWord = text
     .split(/\s+/)[0]
@@ -135,7 +180,6 @@ app.post('/bfhl', async (req, res) => {
       });
     }
 
-    /* ---- Fibonacci ---- */
     if (key === 'fibonacci') {
       const n = body.fibonacci;
       if (!Number.isInteger(n) || n < 0 || n > MAX_FIBONACCI) {
@@ -147,7 +191,6 @@ app.post('/bfhl', async (req, res) => {
       return res.status(200).json(success(fibonacci(n)));
     }
 
-    /* ---- Prime ---- */
     if (key === 'prime') {
       const arr = body.prime;
       if (!Array.isArray(arr) || arr.length > MAX_ARRAY_LENGTH) {
@@ -165,7 +208,6 @@ app.post('/bfhl', async (req, res) => {
       return res.status(200).json(success(arr.filter(isPrime)));
     }
 
-    /* ---- LCM ---- */
     if (key === 'lcm') {
       const arr = body.lcm;
       if (!Array.isArray(arr) || arr.length === 0 || arr.length > MAX_ARRAY_LENGTH) {
@@ -177,7 +219,6 @@ app.post('/bfhl', async (req, res) => {
       return res.status(200).json(success(lcmOfArray(arr)));
     }
 
-    /* ---- HCF ---- */
     if (key === 'hcf') {
       const arr = body.hcf;
       if (!Array.isArray(arr) || arr.length === 0 || arr.length > MAX_ARRAY_LENGTH) {
@@ -189,7 +230,6 @@ app.post('/bfhl', async (req, res) => {
       return res.status(200).json(success(hcfOfArray(arr)));
     }
 
-    /* ---- AI ---- */
     if (key === 'AI') {
       const question = body.AI;
       if (typeof question !== 'string' || question.trim().length === 0) {
@@ -219,7 +259,6 @@ app.post('/bfhl', async (req, res) => {
     return res.status(400).json({ ...fail(), error: "Invalid request" });
 
   } catch (err) {
-    console.error(err);
     return res.status(500).json({
       ...fail(),
       error: "Internal server error"
@@ -240,7 +279,7 @@ app.use((req, res) => {
   res.status(404).json({ ...fail(), error: "Not found" });
 });
 
-/* ---------- START ---------- */
+/* ---------- START SERVER ---------- */
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`BFHL APIs running on port ${PORT}`);
